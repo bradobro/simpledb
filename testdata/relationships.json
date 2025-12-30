@@ -1,0 +1,29 @@
+{
+  "collections": {
+    "people": {
+      "schema": "schema/person.schema.json",
+      "idField": "id",
+      "relationships": {
+        "houseId": {
+          "collection": "houses",
+          "type": "many-to-one",
+          "description": "Each person lives in one house"
+        }
+      },
+      "fixtures": [
+        "fixtures/people/clxyz3000000person0001.json",
+        "fixtures/people/clxyz4000000person0002.json",
+        "fixtures/people/clxyz5000000person0003.json"
+      ]
+    },
+    "houses": {
+      "schema": "schema/house.schema.json",
+      "idField": "id",
+      "fixtures": [
+        "fixtures/houses/clxyz1000000house0001.json",
+        "fixtures/houses/clxyz2000000house0002.json"
+      ]
+    }
+  },
+  "description": "Test data with 2 houses and 3 people. Alice and Bob live at 123 Main St, Carol lives at 456 Oak Avenue."
+}

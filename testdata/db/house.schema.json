@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique CUID2 identifier"
+    },
+    "address": {
+      "type": "string",
+      "description": "Street address"
+    },
+    "city": {
+      "type": "string",
+      "description": "City name"
+    },
+    "bedrooms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of bedrooms"
+    },
+    "built": {
+      "type": "integer",
+      "description": "Year built"
+    }
+  },
+  "required": ["id", "address", "city"]
+}

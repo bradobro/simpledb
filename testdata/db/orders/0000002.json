@@ -1,0 +1,5 @@
+{
+  "customer": "Bob Smith",
+  "items": ["Gizmo"],
+  "total": 29.99
+}

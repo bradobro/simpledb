@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "collections": {
+    "houses": {
+      "id_algorithm": "uuid4"
+    },
+    "people": {
+      "id_algorithm": "seq10"
+    },
+    "orders": {
+      "id_algorithm": "seq36"
+    }
+  }
+}
