@@ -1,25 +1,36 @@
-from_latest_tag = false
-ignore_merge_commits = false
-ignore_fixup_commits = true
-disable_changelog = false
-disable_bump_commit = false
-generate_mono_repository_global_tag = true
-generate_mono_repository_package_tags = true
-branch_whitelist = []
-skip_ci = "[skip ci]"
-skip_untracked = false
-pre_bump_hooks = []
-post_bump_hooks = []
-pre_package_bump_hooks = []
-post_package_bump_hooks = []
+# Cocogitto Configuration
+# for Conventional Commits and Changelog Generation.
+# See https://github.com/cocogitto/cocogitto
+# `cog --version` -> "cog 6.1.0"
+# try `curl https://gist.githubusercontent.com/bradobro/44f0919652642ea92bde6270b3b602ab/raw/cog.toml > cog.toml`
 
-[git_hooks]
+disable_bump_commit = false
+disable_changelog = false
+from_latest_tag = true
+generate_mono_repository_global_tag = true
+branch_whitelist = []
+ignore_merge_commits = true
+skip_ci = "[skip ci]"
+skip_untracked = true
+tag_prefix = "v"
+
+# install with `cog install-hook -a -o`
+[git_hooks.commit-msg]
+script = """#!/bin/sh
+set -e
+cog verify --file $1
+cog check
+"""
 
 [commit_types]
+begin = { changelog_title = "Work Begun", omit_from_changelog = true }
+wip = { changelog_title = "Work in Process", omit_from_changelog = true }
 
 [changelog]
 path = "CHANGELOG.md"
-authors = []
+authors = [
+  { signature = "brad.olson@movedbylight.com", username = "bradobro" }
+]
 
 [bump_profiles]
 
