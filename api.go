@@ -4,160 +4,129 @@ package simpledb
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/binary"
+
 	"iter"
-	"math/big"
-	"time"
 )
 
 // Standard errors
 var (
-	ErrNotFound  error // Record doesn't exist
+	ErrClosed    error // SimpleDB has been closed
 	ErrExists    error // Record/collection already exists
-	ErrClosed    error // Store has been closed
 	ErrInvalidID error // ID contains invalid characters
+	ErrIO        error // Other I/O error
+	ErrNotFound  error // Record doesn't exist
 )
 
-// Store is the main database interface.
-type Store interface {
-	// RawCollection returns a collection handle. Does not check filesystem.
-	RawCollection(name string) RawCollection
-
-	// AddCollection registers a new collection with the specified ID algorithm.
-	AddCollection(ctx context.Context, name, idAlgorithm string) error
-
-	// Collections returns the list of registered collection names.
-	Collections(ctx context.Context) ([]string, error)
-
+// SimpleDB is the main database interface.
+type SimpleDB interface {
+	// Get returns a collection handle. Does not check filesystem.
+	Get(name string) ByteCollection
+	// Create registers a new collection with the specified ID algorithm.
+	Create(ctx context.Context, name, idAlgorithm string) error
+	// List returns the list of registered collection names.
+	List(ctx context.Context) ([]string, error)
 	// Close releases resources.
 	Close() error
-
-	// Check validates consistency between metadata and filesystem.
-	Check(ctx context.Context) (CheckReport, error)
-
-	// Fix repairs inconsistencies detected by Check.
-	Fix(ctx context.Context) (FixReport, error)
+	// Check validates consistency of the store and it's collections If fix is
+	// true it attempts to repair the problems and reports how successful it was
+	// fixing each problem. Otherwise, it only report problems. Optional args
+	// allow ways to limit the check in driver-specific ways. But these guidelines
+	// should be followed:
+	//   - args names are positive, ADDING a check (they shouldn't begin with
+	// 		 "no"), thus...
+	//   - args = [] (empty) do no check, just invoke the checking framework
+	//   - args = ["meta"], check everything about the central store, including
+	// 			 - metadata
+	// 			 - collection names are consistent with collection spaces
+	// 			   (directories), etc.
+	//   - args = ["slow"], run all available checks on each collection
+	//   - args = ["fast"], run all available checks on each collection EXCEPT
+	//     those that involve reading the data of every record. They MAY examine
+	//     file names or the equivalent if a store has them.
+	//   - args = ["all"], do all available checks, sa me as ["meta","slow"]
+	Check(ctx context.Context, fix bool, args ...string) (CheckReport, error)
 }
 
-// RawCollection provides byte-level record operations.
-type RawCollection interface {
+// ByteCollection is a database "table" of untyped bytes.
+type ByteCollection interface {
+	ByteStorer
+	ByteUpdater
+	ByteLister
+}
+
+// ByteStorer is the lowest-level storage interface of a byte collection.
+// Given an id, it can tell you if it has bytes stored under that id
+// Given bytes as well, it can store those bytes under the id
+type ByteStorer interface {
+	// Store stores a record with the specified ID.
+	// If id already exists, it errors.
+	Store(ctx context.Context, id string, data []byte) error
+	// Exists returns true if a record exists.
+	Exists(ctx context.Context, id string) (bool, error)
+	// Check tests consistency of the collection. SimpleDB.Check() will usually
+	// delegate collection checks to this method. It MUST be safe to run
+	// checks on multiple collections in a store simultaneously; this method
+	// must not alter or contend for anything outside its purview
+	Check(ctx context.Context, fix bool, args ...string) (CheckReport, error)
+}
+
+// ByteUpdater holds the basic editing interface of a byte collection.
+type ByteUpdater interface {
 	// Create stores data with an auto-generated ID. Returns the new ID.
 	Create(ctx context.Context, data []byte) (string, error)
-
-	// CreateWithID stores data with the specified ID.
-	CreateWithID(ctx context.Context, id string, data []byte) error
-
-	// RawRead returns the raw JSON bytes for a record.
-	RawRead(ctx context.Context, id string) ([]byte, error)
-
+	// Read returns the raw bytes for a record.
+	Read(ctx context.Context, id string) ([]byte, error)
 	// Update replaces an existing record.
 	Update(ctx context.Context, id string, data []byte) error
-
 	// Delete removes a record.
 	Delete(ctx context.Context, id string) error
-
-	// Exists checks if a record exists.
-	Exists(ctx context.Context, id string) (bool, error)
-
-	// IDs returns an iterator over record IDs in lexicographic order.
-	IDs(ctx context.Context, start string) iter.Seq[string]
-
-	// RawItems returns an iterator over (id, data) pairs in lexicographic order.
-	RawItems(ctx context.Context, start string) iter.Seq2[string, []byte]
 }
 
-// Collection provides typed record operations with JSON marshaling.
-type Collection[T any] interface {
+// ByteLister provides methods for traversing a collection of records of bytes
+type ByteLister interface {
+	// Items returns an iterator over (id, data) pairs in lexicographic order.
+	Items(ctx context.Context, start string) iter.Seq2[string, []byte]
+	// IDs returns an iterator over record IDs in lexicographic order.
+	IDs(ctx context.Context, start string) iter.Seq[string]
+}
+
+// Storer provides typed store/exists operations.
+type Storer[T any] interface {
+	Store(ctx context.Context, id string, record T) error
+	Exists(ctx context.Context, id string) (bool, error)
+}
+
+// Updater provides typed CRUD operations.
+type Updater[T any] interface {
 	Create(ctx context.Context, record T) (string, error)
-	CreateWithID(ctx context.Context, id string, record T) error
 	Read(ctx context.Context, id string) (T, error)
 	Update(ctx context.Context, id string, record T) error
 	Delete(ctx context.Context, id string) error
-	Exists(ctx context.Context, id string) (bool, error)
-	Items(ctx context.Context, start string) iter.Seq2[string, T]
 }
 
-// CheckReport contains results from Store.Check().
+// Lister provides typed iteration.
+type Lister[T any] interface {
+	Items(ctx context.Context, start string) iter.Seq2[string, T]
+	IDs(ctx context.Context, start string) iter.Seq[string]
+}
+
+// Collection combines all typed operations.
+type Collection[T any] interface {
+	Storer[T]
+	Updater[T]
+	Lister[T]
+}
+
+// CheckReport contains results from SimpleDB.Check().
 type CheckReport struct {
 	TotalIssues int
-	Issues      []Issue
+	Issues      []Problem
 }
 
-type Issue struct {
+// Problem represents an inconsistency in a SimpleDB
+type Problem struct {
 	Type        string
 	Description string
 	Path        string
-}
-
-// FixReport contains results from Store.Fix().
-type FixReport struct {
-	TotalFixed int
-	Fixes      []Fix
-}
-
-type Fix struct {
-	Type        string
-	Description string
-	Path        string
-}
-
-// -----------------------------------------------------------------------------
-// tid62: Time ID in Base62
-// -----------------------------------------------------------------------------
-
-const (
-	// Epoch is 2020-01-01 00:00:00 UTC
-	tid62Epoch    = 1577836800
-	tid62Alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	tid62Length   = 17
-)
-
-// NewTID62 generates a new time-based ID in base62.
-// Structure: 4 bytes timestamp (seconds since epoch) + 8 bytes random.
-// Result: 17 character base62 string.
-func NewTID62() string {
-	var buf [12]byte
-
-	// 4 bytes: seconds since epoch (big-endian for sort order)
-	ts := uint32(time.Now().Unix() - tid62Epoch)
-	binary.BigEndian.PutUint32(buf[0:4], ts)
-
-	// 8 bytes: crypto random
-	rand.Read(buf[4:12])
-
-	return encodeBase62(buf[:])
-}
-
-// NewTID62WithPrefix generates a prefixed ID: "{prefix}-{tid62}"
-func NewTID62WithPrefix(prefix string) string {
-	return prefix + "-" + NewTID62()
-}
-
-func encodeBase62(data []byte) string {
-	// Convert bytes to big.Int
-	n := new(big.Int).SetBytes(data)
-
-	base := big.NewInt(62)
-	zero := big.NewInt(0)
-	mod := new(big.Int)
-
-	result := make([]byte, 0, tid62Length)
-
-	for n.Cmp(zero) > 0 {
-		n.DivMod(n, base, mod)
-		result = append(result, tid62Alphabet[mod.Int64()])
-	}
-
-	// Pad to fixed length
-	for len(result) < tid62Length {
-		result = append(result, '0')
-	}
-
-	// Reverse for big-endian order
-	for i, j := 0, len(result)-1; i < j; i, j = i+1, j-1 {
-		result[i], result[j] = result[j], result[i]
-	}
-
-	return string(result)
+	Fixed       bool // always false if Check
 }

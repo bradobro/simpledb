@@ -1,43 +1,59 @@
 # SimpleDB API Specification
 
-See [api.go](api.go) and [api.ts](api.ts) for example interface definitions.
+See [api.go](api.go) and [api.ts](api.ts) for interface definitions.
 
-## Store Interface
+## SimpleDB Interface
 
 | Method | Returns | Description |
 |--------|---------|-------------|
-| `RawCollection(name)` | RawCollection | Get collection handle (lazy) |
-| `AddCollection(name, algorithm)` | error | Register collection |
-| `Collections()` | []string, error | List collections |
+| `Get(name)` | ByteCollection | Get collection handle (lazy) |
+| `Create(name, algorithm)` | error | Register collection |
+| `List()` | []string, error | List collections |
 | `Close()` | error | Release resources |
-| `Check()` | CheckReport, error | Validate consistency |
-| `Fix()` | FixReport, error | Repair issues |
-TODO: consider adding driver info (format version, ID schemes and characteristics
+| `Check(fix, args...)` | CheckReport, error | Validate/repair consistency |
 
-## RawCollection Interface
+## ByteCollection Interface
+
+Composed of ByteStorer, ByteUpdater, ByteLister.
+
+### ByteStorer
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `Store(id, data)` | error | Store with specified ID (errors if exists) |
+| `Exists(id)` | bool, error | Check existence |
+| `Check(fix, args...)` | CheckReport, error | Validate/repair collection |
+
+### ByteUpdater
 
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `Create(data)` | id, error | Create with auto-generated ID |
-| `CreateWithID(id, data)` | error | Create with specified ID |
-| `RawRead(id)` | []byte, error | Read raw JSON |
+| `Read(id)` | []byte, error | Read bytes |
 | `Update(id, data)` | error | Replace record |
 | `Delete(id)` | error | Remove record |
-| `Exists(id)` | bool, error | Check existence |
-| `IDs(start)` | iterator | Iterate IDs lexicographically |
-| `RawItems(start)` | iterator | Iterate (id, data) pairs |
 
-
-## Typed Collection
-
-Generic wrapper providing JSON marshal/unmarshal:
+### ByteLister
 
 | Method | Returns | Description |
 |--------|---------|-------------|
+| `Items(start)` | iterator | Iterate (id, data) pairs |
+| `IDs(start)` | iterator | Iterate IDs |
+
+## Typed Collection
+
+Composed of Storer[T], Updater[T], Lister[T].
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `Store(id, record)` | error | Store with specified ID |
+| `Exists(id)` | bool, error | Check existence |
 | `Create(record)` | id, error | Marshal and create |
 | `Read(id)` | T, error | Read and unmarshal |
 | `Update(id, record)` | error | Marshal and update |
+| `Delete(id)` | error | Remove record |
 | `Items(start)` | iterator | Iterate typed records |
+| `IDs(start)` | iterator | Iterate IDs |
 
 ## Errors
 
@@ -45,12 +61,23 @@ Generic wrapper providing JSON marshal/unmarshal:
 |-------|-----------|
 | `ErrNotFound` | Record doesn't exist |
 | `ErrExists` | Record/collection already exists |
-| `ErrClosed` | Store closed |
+| `ErrClosed` | SimpleDB closed |
 | `ErrInvalidID` | Invalid ID format |
+| `ErrIO` | Other I/O error |
+
+## Check Args
+
+| Arg | Scope |
+|-----|-------|
+| (empty) | No checks, just invoke framework |
+| `meta` | Metadata and collection consistency |
+| `fast` | All checks except reading every record |
+| `slow` | All checks including reading every record |
+| `all` | Same as `meta` + `slow` |
 
 ## Behavior Notes
 
-- `Create` and `CreateWithID` never overwrite existing records
+- `Store` and `Create` never overwrite existing records
 - `Update` requires record to exist
 - All operations are atomic
 - Iteration is lexicographic by ID

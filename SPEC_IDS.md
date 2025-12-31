@@ -8,72 +8,43 @@ IDs uniquely identify records within a collection. Implementations and drivers c
 
 - IDs must be unique within a collection
 - Character set: alphanumeric plus `_-` (a-z, A-Z, 0-9, underscore, hyphen)
-- ID schemes MAY reserve characters (e.g. `-`) for prefix-based grouping schemes (a common pattern in DynamoDB), e.g. <userid>-<classid>
-- ID MAY have other characteristics, such as predictable sorting orders, abbreviations, etc. documented by the backends.
+- ID schemes MAY reserve characters (e.g. `-`) for prefix-based grouping schemes
+- IDs MAY have other characteristics (sorting, abbreviations) documented by backends
 
-## Recommended Default: tid62
+## Recommended Default: CUID2
 
-**tid62** = Time ID in Base62
+**CUID2** [Collision-resistant Unique IDentifier](https://github.com/paralleldrive/cuid2?tab=readme-ov-file#the-contenders) is the recommended default. If an easier no-lib version is required,
 
-**Structure:** 12 bytes
-- 4 bytes: seconds since 2020-01-01 00:00:00 UTC (big-endian)
-- 8 bytes: cryptographically random
-
-**Encoding:** Base62 (`0-9A-Za-z`), 17 characters fixed width, zero-padded
-
-**Properties:**
-- Time-sortable (lexicographic ≈ chronological)
-- 64 bits random per second (~10^19 possible, collision-resistant)
-- No external deps (uses stdlib BigInt/big.Int)
-- Leaves `-` available for prefixed IDs
-- Epoch runway: 2020 to ~2156
-
-**Example:**
-```
-Timestamp: 2025-12-30 12:00:00 UTC (189388800 seconds from epoch)
-Random:    8 bytes from crypto/rand
-Result:    0B4kZ7mNpQrStUvWx  (17 chars)
-```
-
-See [api.go](api.go) and [api.ts](api.ts) for reference implementations.
-
-## Base62 Alphabet
-
-```
-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
-```
-
-Position 0-9 = digits, 10-35 = uppercase, 36-61 = lowercase.
 
 ## Alternative Algorithms
 
 Implementations may offer these or others:
 
-| Algorithm | Length | Properties |
-|-----------|--------|------------|
-| uuid464 | 22| base64url encoded UUID64|
-| tid62 | 17 | Time-sorted, recommended default |
-| seq10 | 10 | Zero-padded ordinal decimal, requires state |
-| seq36 | 7 | Zero-padded ordinal base-36, requires state |
+- **cuid2** (~25 chars) - Secure, monotonic, stateless. Pro: audited, widely supported. Con: requires library.
+- **uuid4** (36 chars) - Standard format. Pro: ubiquitous. Con: longer, less collision-resistant than cuid2.
+- **ulid** (26 chars) - Time-sorted, Crockford Base32. Pro: sortable. Con: leaks timestamp.
+- **[tid62](ideas/tid62.md)** (17 chars) - Compact time-sorted base62. Pro: short, no deps. Con: unaudited, leaks time.
+- **seq10** (10 chars) - Zero-padded decimal. Pro: human-readable. Con: predictable, needs state file.
+- **seq36** (7 chars) - Zero-padded base-36. Pro: very compact. Con: predictable, needs state file.
 
 ## Custom IDs
 
-`CreateWithID(id, data)` accepts any valid ID string:
+`Store(id, data)` accepts any valid ID string:
 - Foreign keys from external systems
 - User-chosen identifiers (usernames, slugs)
-- Prefixed IDs: `user-0ABC123...`, `order-0XYZ789...`
+- Prefixed IDs: `user-clh3am8kw...`, `order-cm5f9k2x1...`
 
 ## Prefixed ID Pattern
 
-Use `-` as separator id portions:
+Use `-` as separator for ID portions:
 
 ```
-# to have human-readable namespaces within a collection
-{prefix}-{tid62}
-user-0B4kZ7mNpQrStUvWx
-order-0B4kZ7mNpQrStUvWy
+# Human-readable namespaces within a collection
+{prefix}-{cuid2}
+user-clh3am8kw0000g3s0h8d6a9xq
+order-cm5f9k2x10001jh08qrv5z8gt
 
-# OR for DynamoDB-style prefix listing/scoping
+# DynamoDB-style composite keys
 {userid}-{workoutid}-{exerciseid}
 ```
 
