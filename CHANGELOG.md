@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. See [conven
 
 - - -
 ## v0.9.0 - 2025-12-31
+#### VERSION JUMP
+- leap minor versions to align with version numbers in simpledb-go, where earlier versions of this specification reside
 #### Bug Fixes
 - update docs and data, sync version numbers - (c7d903b) - Brad Olson
 
