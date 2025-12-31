@@ -1,5 +1,5 @@
 {
-  "customer": "Bob Smith",
+  "personId": "0000000002",
   "items": ["Gizmo"],
   "total": 29.99
 }

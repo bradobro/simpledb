@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique uuid464 identifier"
+    },
+    "make": {
+      "type": "string",
+      "description": "Vehicle manufacturer"
+    },
+    "model": {
+      "type": "string",
+      "description": "Vehicle model name"
+    },
+    "year": {
+      "type": "integer",
+      "minimum": 1900,
+      "description": "Model year"
+    },
+    "personId": {
+      "type": "string",
+      "description": "seq10 reference to people collection"
+    }
+  },
+  "required": ["id", "make", "model", "year", "personId"]
+}

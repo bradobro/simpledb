@@ -17,18 +17,25 @@ db/
 ├── db.json                    # Metadata: version + registered collections
 ├── house.schema.json          # JSONSchema documentation (optional)
 ├── person.schema.json         # JSONSchema documentation (optional)
-├── houses/                    # Collection: uuid4 IDs (random UUIDs)
-│   ├── clxyz1000000house0001.json
-│   └── clxyz2000000house0002.json
-├── people/                    # Collection: seq10 IDs (sequential decimal)
+├── order.schema.json          # JSONSchema documentation (optional)
+├── vehicle.schema.json        # JSONSchema documentation (optional)
+├── houses/                    # Collection: cuid2 IDs (~25 chars)
+│   ├── clh3am8kw0000g3s0h8d6a9xq.json
+│   └── cm5f9k2x10001jh08qrv5z8gt.json
+├── people/                    # Collection: seq10 IDs (10-digit decimal)
 │   ├── .id                    # Latest ID state (for sequential generators)
 │   ├── 0000000001.json
 │   ├── 0000000002.json
 │   └── 0000000003.json
-└── orders/                    # Collection: seq36 IDs (sequential base-36)
-    ├── .id                    # Latest ID state
-    ├── 0000001.json
-    └── 0000002.json
+├── orders/                    # Collection: seq36 IDs (7-digit base-36)
+│   ├── .id                    # Latest ID state
+│   ├── 0000001.json           # Orders 1-9 use digits
+│   ├── ...
+│   └── 000000c.json           # Orders 10+ use letters (a=10, b=11, c=12)
+└── vehicles/                  # Collection: uuid464 IDs (base64url-encoded UUID4)
+    ├── VQ6EAOKbQdSnFkRmVUQAAQ.json
+    ├── a6e4EJ2tEdGAtADAT9QwyA.json
+    └── 9HrBBYjMQ3KlZw4CssPUeQ.json
 ```
 
 ## Key Files
@@ -37,13 +44,13 @@ db/
 Stores metadata about the database:
 - `version`: Backend format version (currently "1.0.0")
 - `collections`: Map of collection names to their configuration
-  - `id_algorithm`: ID generation algorithm ("uuid4", "seq10", or "seq36")
+  - `id_algorithm`: ID generation algorithm ("cuid2", "uuid464", "seq10", "seq36", etc.)
 
 ### .id Files (Sequential Algorithms Only)
 For seq10 and seq36 collections, a `.id` file tracks the latest generated ID:
 - One-line text file containing the current sequence number
 - Atomically updated on each Create() call
-- Not used by uuid4 algorithm (random, no sequence needed)
+- Not used by stateless algorithms (cuid2, uuid464) which generate IDs without state
 
 ### Collections
 Each collection is a **directory** containing JSON files:

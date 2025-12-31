@@ -2,13 +2,16 @@
   "version": "1.0.0",
   "collections": {
     "houses": {
-      "id_algorithm": "uuid4"
+      "id_algorithm": "cuid2"
     },
     "people": {
       "id_algorithm": "seq10"
     },
     "orders": {
       "id_algorithm": "seq36"
+    },
+    "vehicles": {
+      "id_algorithm": "uuid464"
     }
   }
 }
