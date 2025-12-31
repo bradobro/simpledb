@@ -24,51 +24,51 @@ Character set: alphanumeric plus `-` (for prefixed IDs like `user-0ABC123`). See
 
 Two ways to create records:
 
-2. **Specified ID:** `CreateWithID(id, data)` - You provide the ID. ErrExists if record exists.
-1. **Auto-generated ID:** `Create(data)` - SimpleDB generates a unique ID. If record exists, retry (configurable N and waiting) another generated ID, then ErrExists after N retries.
+1. **Specified ID:** `Store(id, data)` - You provide the ID. ErrExists if record exists.
+2. **Auto-generated ID:** `Create(data)` - SimpleDB generates a unique ID. Retries on collision.
 
 **Critical rule:** Neither method overwrites existing records.
 
 ## Core API
 
-### Store Operations
+### SimpleDB Operations
 
 | Method | Description |
 |--------|-------------|
-| `RawCollection(name)` | Get collection handle |
-| `AddCollection(name, idAlgorithm)` | Register collection with ID algorithm |
-| `Collections()` | List registered collections |
+| `Get(name)` | Get collection handle |
+| `Create(name, idAlgorithm)` | Register collection |
+| `List()` | List registered collections |
 | `Close()` | Release resources |
-| `Check()` | Validate consistency |
-| `Fix()` | Repair inconsistencies |
+| `Check(fix, args...)` | Validate/repair consistency |
 
 ### Collection Operations
 
 | Method | Description |
 |--------|-------------|
-| `Create(data)` | Create record, return generated ID |
-| `CreateWithID(id, data)` | Create record with specified ID |
-| `RawRead(id)` | Read record bytes |
+| `Store(id, data)` | Store with specified ID |
+| `Create(data)` | Create with auto-generated ID |
+| `Read(id)` | Read record bytes |
 | `Update(id, data)` | Replace existing record |
 | `Delete(id)` | Remove record |
 | `Exists(id)` | Check if record exists |
+| `Items(start)` | Iterate (id, data) pairs |
 | `IDs(start)` | Iterate record IDs |
-| `RawItems(start)` | Iterate (ID, data) pairs |
 
 ## Error Semantics
 
 | Error | Condition |
 |-------|-----------|
 | `ErrNotFound` | Record doesn't exist |
-| `ErrExists` | Record/collection already exists (or non-colliding ID couldn't be generated after configured retries.) |
-| `ErrClosed` | Store has been closed |
+| `ErrExists` | Record/collection already exists |
+| `ErrClosed` | SimpleDB has been closed |
 | `ErrInvalidID` | ID contains invalid characters |
+| `ErrIO` | Other I/O error |
 
 ## Concurrency
 
-TODO: drivers must document concurrency and consistency promises of each ID type.
+TODO: drivers must document concurrency and consistency promises.
 
-In general, strive for
+In general, strive for:
 
 - Concurrent reads: always safe
 - Concurrent writes to different IDs: safe
@@ -77,7 +77,7 @@ In general, strive for
 
 ## ID Storage
 
-IDs are managed by the storage backend. See [SPEC_DISK.md](SPEC_DISK.md) for file-based storage details on how IDs are stored separately from record content (in file name, NOT in record--a pattern recommended but not required.).
+IDs are managed by the storage backend. See [SPEC_DISK.md](SPEC_DISK.md) for file-based storage details.
 
 ## ID Generation
 
