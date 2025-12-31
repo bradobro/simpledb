@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique seq36 identifier"
+    },
+    "personId": {
+      "type": "string",
+      "description": "seq10 reference to people collection"
+    },
+    "items": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of ordered items"
+    },
+    "total": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Order total in dollars"
+    }
+  },
+  "required": ["id", "personId", "items", "total"]
+}

@@ -1,7 +1,9 @@
 # SimpleDB Specification
 
-**Version:** 1.0.0
+**Version:** 0.0.1 (a.k.a simpledb-go v0.8.0).
 **Last Updated:** 2025-12-27
+
+This derives from the old simpledb monorepo holding early tests in backends, Go and TypeScript implementation parity, etc. It was converted into the repo simpledb-go, split off in v0.8.0 of that repository.
 
 ## Overview
 
