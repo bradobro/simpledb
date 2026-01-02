@@ -21,11 +21,12 @@ IDs uniquely identify records within a collection. Implementations and drivers c
 Implementations may offer these or others:
 
 - **cuid2** (~25 chars) - Secure, monotonic, stateless. Pro: audited, widely supported. Con: requires library.
-- **uuid4** (36 chars) - Standard format. Pro: ubiquitous. Con: longer, less collision-resistant than cuid2.
+- **uuid464** (22 chars) - UUID4 encoded in base64url. Pro: compact, standard algorithm, stateless, concurrent-safe. Con: requires base64url encoding.
+- **uuid4** (36 chars) - Standard hex-with-dashes format. Pro: ubiquitous. Con: longer than base64url encoding.
 - **ulid** (26 chars) - Time-sorted, Crockford Base32. Pro: sortable. Con: leaks timestamp.
 - **[tid62](ideas/tid62.md)** (17 chars) - Compact time-sorted base62. Pro: short, no deps. Con: unaudited, leaks time.
-- **seq10** (10 chars) - Zero-padded decimal. Pro: human-readable. Con: predictable, needs state file.
-- **seq36** (7 chars) - Zero-padded base-36. Pro: very compact. Con: predictable, needs state file.
+- **seq10** (10 chars) - Zero-padded decimal. Pro: human-readable. Con: predictable, needs state file, single-writer only.
+- **seq36** (7 chars) - Zero-padded base-36. Pro: very compact. Con: predictable, needs state file, single-writer only.
 
 ## Custom IDs
 
