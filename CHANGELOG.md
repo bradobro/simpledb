@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
-## v0.1.0 - 2026-01-02
+## v0.10.0 - 2026-01-02
 #### Features
 - shrink APIs and review ID's - (0b32e20) - Brad Olson
 - Separate spec from implementations - (4c3ae7d) - Brad Olson
