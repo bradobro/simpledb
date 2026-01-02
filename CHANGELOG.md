@@ -2,6 +2,22 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## v0.1.0 - 2026-01-02
+#### Features
+- shrink APIs and review ID's - (0b32e20) - Brad Olson
+- Separate spec from implementations - (4c3ae7d) - Brad Olson
+#### Bug Fixes
+- BOOKMARK next steps - (713348a) - Brad Olson
+- update docs and data, sync version numbers - (4bd690a) - Brad Olson
+#### Documentation
+- id generator notes - (8c72711) - Brad Olson
+- note version jump to v0.9.0 - (7bc7a70) - Brad Olson
+#### Miscellaneous Chores
+- (**version**) v0.9.0 - (9324062) - Brad Olson
+- (**version**) v0.1.0 - (d512c98) - Brad Olson
+
+- - -
+
 ## v0.9.0 - 2025-12-31
 #### VERSION JUMP
 - leap minor versions to align with version numbers in simpledb-go, where earlier versions of this specification reside
